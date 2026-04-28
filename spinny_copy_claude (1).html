@@ -1,0 +1,1584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spinny Copy Studio v4</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --brand: #E63946; --brand-dark: #C1121F; --brand-soft: #FCEDEF;
+    --bg: #F7F7F5; --surface: #FFFFFF; --border: #E8E8E4;
+    --text: #1A1A1A; --text-muted: #6B6B67; --text-hint: #9E9E9A;
+    --good: #2D9D5C; --good-bg: #EAF7EF;
+    --bad: #D94040; --bad-bg: #FCEAEA;
+    --warning: #D97706; --warning-bg: #FEF3E2;
+    --blue: #2563EB; --blue-bg: #EFF4FD;
+    --radius: 10px; --radius-lg: 14px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  .nav { background: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 24px; height: 56px; gap: 0; position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow); }
+  .nav-logo { display: flex; align-items: center; gap: 8px; margin-right: 32px; text-decoration: none; }
+  .nav-logo-icon { width: 28px; height: 28px; background: var(--brand); border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+  .nav-logo-icon svg { width: 16px; height: 16px; fill: white; }
+  .nav-logo-text { font-size: 15px; font-weight: 600; color: var(--text); letter-spacing: -0.3px; }
+  .nav-logo-text span { color: var(--brand); }
+  .nav-tabs { display: flex; gap: 2px; }
+  .nav-tab { padding: 6px 14px; border-radius: 7px; font-size: 13px; font-weight: 500; color: var(--text-muted); cursor: pointer; border: none; background: none; transition: all 0.15s; }
+  .nav-tab:hover { background: var(--bg); color: var(--text); }
+  .nav-tab.active { background: var(--brand-soft); color: var(--brand); }
+  .nav-spacer { flex: 1; }
+  .nav-badge { font-size: 11px; font-weight: 600; background: var(--brand); color: white; padding: 3px 8px; border-radius: 20px; }
+
+  /* STATUS BAR */
+  #status-bar { padding: 8px 24px; font-size: 12px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border); background: white; }
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-hint); }
+  .status-dot.connected { background: var(--good); }
+  .status-dot.loading { background: var(--warning); animation: pulse 1s infinite; }
+  .status-dot.error { background: var(--bad); }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+
+  .app { display: flex; height: calc(100vh - 92px); }
+  .sidebar { width: 260px; min-width: 260px; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow-y: auto; }
+  .main { flex: 1; overflow-y: auto; padding: 24px; }
+
+  .sidebar-section { padding: 16px; border-bottom: 1px solid var(--border); }
+  .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.8px; color: var(--text-hint); text-transform: uppercase; margin-bottom: 10px; }
+  .vertical-btn { width: 100%; text-align: left; padding: 9px 12px; border-radius: var(--radius); border: none; background: none; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--text-muted); display: flex; align-items: center; gap: 8px; transition: all 0.12s; }
+  .vertical-btn:hover { background: var(--bg); color: var(--text); }
+  .vertical-btn.active { background: var(--brand-soft); color: var(--brand); }
+  .vertical-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; opacity: 0.6; }
+  .campaign-btn { width: 100%; text-align: left; padding: 8px 12px; border-radius: var(--radius); border: none; background: none; cursor: pointer; font-size: 12px; font-weight: 400; color: var(--text-muted); display: flex; align-items: center; gap: 8px; transition: all 0.12s; line-height: 1.4; }
+  .campaign-btn:hover { background: var(--bg); color: var(--text); }
+  .campaign-btn.active { background: var(--blue-bg); color: var(--blue); font-weight: 500; }
+  .campaign-icon { font-size: 13px; width: 18px; text-align: center; }
+  .add-campaign-btn { width: 100%; text-align: left; padding: 8px 12px; border-radius: var(--radius); border: 1px dashed var(--border); background: none; cursor: pointer; font-size: 12px; color: var(--text-hint); display: flex; align-items: center; gap: 6px; margin-top: 8px; transition: all 0.12s; }
+  .add-campaign-btn:hover { border-color: var(--brand); color: var(--brand); background: var(--brand-soft); }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  .page-header { margin-bottom: 24px; }
+  .page-title { font-size: 20px; font-weight: 600; letter-spacing: -0.4px; color: var(--text); }
+  .page-subtitle { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+  .breadcrumb { font-size: 12px; color: var(--text-hint); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .breadcrumb span { color: var(--brand); font-weight: 500; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; margin-bottom: 16px; box-shadow: var(--shadow); }
+  .card-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .card-title-icon { width: 20px; height: 20px; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 11px; }
+
+  label { display: block; font-size: 12px; font-weight: 500; color: var(--text-muted); margin-bottom: 6px; }
+  input[type=text], input[type=password], textarea, select {
+    width: 100%; border: 1px solid var(--border); border-radius: var(--radius); padding: 9px 12px;
+    font-size: 13px; font-family: 'DM Sans', sans-serif; color: var(--text); background: var(--bg);
+    outline: none; transition: border 0.15s;
+  }
+  input[type=text]:focus, input[type=password]:focus, textarea:focus, select:focus { border-color: var(--brand); background: white; }
+  textarea { resize: vertical; min-height: 90px; line-height: 1.6; }
+  select { cursor: pointer; }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-group { margin-bottom: 14px; }
+
+  .btn { padding: 9px 18px; border-radius: var(--radius); border: none; font-size: 13px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s; font-family: 'DM Sans', sans-serif; }
+  .btn-primary { background: var(--brand); color: white; }
+  .btn-primary:hover { background: var(--brand-dark); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-secondary { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover { border-color: #ccc; background: white; }
+  .btn-ghost { background: none; color: var(--text-muted); border: 1px solid var(--border); }
+  .btn-good { background: var(--good-bg); color: var(--good); border: 1px solid #B6E6CF; }
+  .btn-bad { background: var(--bad-bg); color: var(--bad); border: 1px solid #F4BEBE; }
+  .btn-good.active-rating { background: var(--good); color: white; border-color: var(--good); }
+  .btn-bad.active-rating { background: var(--bad); color: white; border-color: var(--bad); }
+  .btn-save { background: var(--blue-bg); color: var(--blue); border: 1px solid #BDD0F8; }
+  .btn-save:hover { background: var(--blue); color: white; }
+
+  /* BRIEF PANEL */
+  .brief-panel { background: linear-gradient(135deg, #F0FBF5, #EFF4FD); border: 1px solid #BDD0F8; border-radius: var(--radius); padding: 12px 14px; margin-bottom: 14px; font-size: 12px; }
+  .brief-panel-title { font-weight: 600; color: var(--blue); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+  .brief-row { display: flex; gap: 6px; margin-bottom: 4px; font-size: 11px; }
+  .brief-key { color: var(--text-hint); width: 90px; flex-shrink: 0; font-weight: 500; }
+  .brief-val { color: var(--text); }
+  .brief-examples { margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(0,0,0,0.06); }
+  .brief-example { background: white; border-radius: 6px; padding: 6px 10px; margin-bottom: 4px; font-size: 11px; border-left: 3px solid var(--good); color: var(--text); line-height: 1.5; }
+  .brief-example.bad { border-left-color: var(--bad); }
+
+  /* VARIANT OUTPUT */
+  .variant-block { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 16px; overflow: hidden; }
+  .variant-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: white; border-bottom: 1px solid var(--border); }
+  .variant-label { font-size: 12px; font-weight: 600; color: var(--text-muted); letter-spacing: 0.3px; }
+  .variant-actions { display: flex; gap: 8px; padding: 10px 14px; border-top: 1px solid var(--border); background: white; align-items: center; flex-wrap: wrap; }
+  .variant-char-count { font-size: 11px; color: var(--text-hint); margin-left: auto; }
+  .variant-feedback { padding: 8px 14px 10px; background: white; border-top: 1px solid var(--border); }
+  .variant-feedback-row { display: flex; gap: 8px; align-items: center; }
+  .variant-feedback input { flex: 1; font-size: 12px; padding: 7px 10px; }
+  .variant-saved-indicator { font-size: 11px; color: var(--good); font-weight: 500; display: none; margin-top: 6px; }
+
+  .output-block { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; font-size: 13px; line-height: 1.7; color: var(--text); white-space: pre-wrap; min-height: 60px; font-family: 'DM Mono', monospace; }
+  .output-block.loading { color: var(--text-hint); font-style: italic; font-family: 'DM Sans', sans-serif; animation: pulse 1.2s ease-in-out infinite; }
+
+  /* FEEDBACK MEMORY BANNER */
+  .feedback-banner { background: linear-gradient(135deg, #EFF4FD, #F0FBF5); border: 1px solid #BDD0F8; border-radius: var(--radius); padding: 10px 14px; margin-bottom: 12px; font-size: 12px; color: var(--blue); display: flex; align-items: flex-start; gap: 8px; }
+
+  /* REVIEW TABLE */
+  .review-table-wrap { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { background: var(--bg); padding: 10px 14px; text-align: left; font-weight: 600; font-size: 11px; color: var(--text-muted); letter-spacing: 0.4px; text-transform: uppercase; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; line-height: 1.5; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(0,0,0,0.015); }
+  .badge { display: inline-flex; align-items: center; padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+  .badge-good { background: var(--good-bg); color: var(--good); }
+  .badge-bad { background: var(--bad-bg); color: var(--bad); }
+  .badge-pending { background: var(--warning-bg); color: var(--warning); }
+  .badge-channel { background: var(--blue-bg); color: var(--blue); }
+
+  /* ANALYTICS */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px; box-shadow: var(--shadow); }
+  .stat-label { font-size: 11px; font-weight: 600; color: var(--text-hint); letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 8px; }
+  .stat-value { font-size: 26px; font-weight: 300; letter-spacing: -1px; color: var(--text); }
+  .stat-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+  .stat-good { border-left: 3px solid var(--good); }
+  .stat-bad { border-left: 3px solid var(--bad); }
+  .stat-blue { border-left: 3px solid var(--blue); }
+  .stat-brand { border-left: 3px solid var(--brand); }
+
+  .perf-bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .perf-bar-label { font-size: 12px; color: var(--text-muted); width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0; }
+  .perf-bar-track { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .perf-bar-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
+  .perf-bar-count { font-size: 11px; color: var(--text-hint); width: 40px; text-align: right; flex-shrink: 0; }
+
+  .insight-item { display: flex; gap: 12px; align-items: flex-start; padding: 12px 0; border-bottom: 1px solid var(--border); }
+  .insight-item:last-child { border-bottom: none; }
+  .insight-icon { width: 28px; height: 28px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+  .insight-text { font-size: 13px; color: var(--text); line-height: 1.5; }
+
+  .empty-state { text-align: center; padding: 48px 24px; color: var(--text-hint); }
+  .empty-state-icon { font-size: 36px; margin-bottom: 12px; opacity: 0.4; }
+  .empty-state-text { font-size: 14px; }
+
+  #api-key-bar { background: #FFF8E7; border-bottom: 1px solid #F5D880; padding: 10px 24px; display: flex; align-items: center; gap: 12px; font-size: 13px; }
+  .api-key-input { border: 1px solid #F0CC60; border-radius: 6px; padding: 6px 10px; font-size: 12px; width: 280px; background: white; font-family: 'DM Mono', monospace; outline: none; }
+
+  .divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; background: var(--bg); border: 1px solid var(--border); color: var(--text-muted); margin: 2px; cursor: pointer; transition: all 0.1s; }
+  .tag.selected { background: var(--brand-soft); border-color: var(--brand); color: var(--brand); }
+
+  .log-entry { font-size: 11px; color: var(--text-muted); padding: 6px 0; border-bottom: 1px solid var(--border); display: flex; gap: 12px; font-family: 'DM Mono', monospace; }
+  .log-entry:last-child { border-bottom: none; }
+  .log-ts { color: var(--text-hint); flex-shrink: 0; width: 140px; }
+  .log-type { flex-shrink: 0; width: 80px; font-weight: 500; }
+  .log-type.log-gen { color: var(--blue); }
+  .log-type.log-save { color: var(--good); }
+  .log-type.log-rate { color: var(--warning); }
+
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 999; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal { background: white; border-radius: var(--radius-lg); padding: 24px; width: 400px; box-shadow: 0 20px 60px rgba(0,0,0,0.15); transform: translateY(8px); transition: transform 0.2s; }
+  .modal-overlay.open .modal { transform: translateY(0); }
+  .modal-title { font-size: 15px; font-weight: 600; margin-bottom: 14px; }
+  .modal-actions { display: flex; gap: 8px; margin-top: 16px; justify-content: flex-end; }
+
+  /* WA BUBBLE — matches real WhatsApp UI */
+  .wa-preview-wrap { background: #ECE5DD url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23c8bdb5' fill-opacity='0.2'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"); border-radius: var(--radius); overflow:hidden; }
+  .wa-phone-bar { background: #075E54; padding: 10px 14px; display: flex; align-items: center; gap: 10px; }
+  .wa-phone-avatar { width: 34px; height: 34px; border-radius: 50%; background: #25D366; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink:0; }
+  .wa-phone-name { font-size: 14px; font-weight: 600; color: white; font-family: -apple-system, sans-serif; }
+  .wa-phone-sub { font-size: 11px; color: rgba(255,255,255,0.7); font-family: -apple-system, sans-serif; }
+  .wa-body-area { padding: 12px 10px; }
+  .wa-bubble { background: white; border-radius: 0 8px 8px 8px; padding: 8px 10px 4px; max-width: 88%; position: relative; box-shadow: 0 1px 2px rgba(0,0,0,0.15); display:inline-block; }
+  .wa-bubble::before { content: ''; position: absolute; top: 0; left: -8px; border-top: 8px solid white; border-left: 8px solid transparent; }
+  .wa-bubble-bold { font-size: 14px; font-weight: 700; color: #111; line-height: 1.4; margin-bottom: 5px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .wa-bubble-body { font-size: 13.5px; color: #303030; line-height: 1.55; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; white-space: pre-wrap; }
+  .wa-bubble-cta { display: block; margin-top: 8px; font-size: 13.5px; color: #0085C7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; text-decoration: underline; }
+  .wa-bubble-footer { display: flex; justify-content: flex-end; align-items: center; gap: 3px; margin-top: 2px; }
+  .wa-bubble-time { font-size: 10.5px; color: #8696A0; font-family: -apple-system, sans-serif; }
+  .wa-tick { color: #53BDEB; font-size: 13px; }
+  /* char counter badges */
+  .char-badge { display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:500; padding:3px 8px; border-radius:20px; margin:4px 2px 0; }
+  .char-badge.ok { background:var(--good-bg); color:var(--good); }
+  .char-badge.warn { background:var(--warning-bg); color:var(--warning); }
+  .char-badge.over { background:var(--bad-bg); color:var(--bad); }
+
+  /* PUSH NOTIFICATION — iOS pill style matching screenshot */
+  .push-preview-wrap { background: #1C1C1E; border-radius: 16px; padding: 16px; }
+  .push-pill { background: rgba(235,235,240,0.92); backdrop-filter: blur(20px); border-radius: 16px; padding: 12px 14px; display: flex; align-items: flex-start; gap: 10px; }
+  .push-pill-icon { width: 36px; height: 36px; border-radius: 8px; background: var(--brand); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink:0; }
+  .push-pill-content { flex: 1; min-width: 0; }
+  .push-pill-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; }
+  .push-pill-app { font-size: 11px; font-weight: 500; color: #666; font-family: -apple-system, sans-serif; text-transform: uppercase; letter-spacing: 0.3px; }
+  .push-pill-time { font-size: 11px; color: #999; font-family: -apple-system, sans-serif; }
+  .push-pill-title { font-size: 14px; font-weight: 700; color: #1C1C1E; line-height: 1.3; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .push-pill-body { font-size: 13.5px; color: #1C1C1E; line-height: 1.4; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin-top: 1px; white-space: pre-wrap; }
+
+  .save-prompt-bar { display: flex; align-items: center; gap: 8px; padding: 10px 0; border-top: 1px solid var(--border); margin-top: 4px; }
+  .save-prompt-bar input { flex: 1; font-size: 12px; }
+
+  @media (max-width: 768px) {
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+    .form-grid { grid-template-columns: 1fr; }
+    .sidebar { display: none; }
+    .two-col { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div id="api-key-bar">
+  <span>🔑</span>
+  <span style="color:#7A5C00;font-weight:500;">Claude API Key</span>
+  <input class="api-key-input" type="password" id="apiKeyInput" placeholder="sk-ant-..." />
+  <button class="btn btn-secondary" id="connectBtn" style="font-size:12px;padding:6px 12px;" onclick="connectKey()">Connect</button>
+  <button class="btn btn-bad" id="disconnectBtn" style="font-size:12px;padding:6px 12px;display:none;" onclick="disconnectKey()">Disconnect</button>
+  <span id="key-status" style="font-size:12px;color:var(--text-hint);"></span>
+</div>
+
+<nav class="nav">
+  <a class="nav-logo" href="#">
+    <div class="nav-logo-icon"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
+    <span class="nav-logo-text">Spinny <span>Copy</span></span>
+  </a>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('generate',this)">Generate</button>
+    <button class="nav-tab" onclick="showPage('review',this)">Review Queue</button>
+    <button class="nav-tab" onclick="showPage('analytics',this)">Analytics</button>
+  </div>
+  <div class="nav-spacer"></div>
+  <div class="nav-badge" id="pending-badge">0 saved</div>
+</nav>
+
+<div id="status-bar">
+  <div class="status-dot" id="briefs-dot"></div>
+  <span id="briefs-status" style="color:var(--text-muted);">Campaign briefs: not loaded</span>
+  <span style="color:var(--border);margin:0 4px;">|</span>
+  <div class="status-dot" id="feedback-dot"></div>
+  <span id="feedback-status" style="color:var(--text-muted);">Feedback library: not loaded</span>
+  <button class="btn btn-ghost" style="margin-left:auto;font-size:11px;padding:4px 10px;" onclick="loadAllData()">🔄 Sync Sheets</button>
+</div>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Business Vertical</div>
+      <button class="vertical-btn active" onclick="selectVertical('demand',this)"><span class="vertical-dot"></span> Demand</button>
+      <button class="vertical-btn" onclick="selectVertical('supply',this)"><span class="vertical-dot"></span> Supply</button>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Campaigns</div>
+      <div id="campaign-list"></div>
+      <button class="add-campaign-btn" onclick="openAddCampaignModal()"><span>+</span> Add Campaign</button>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- GENERATE PAGE -->
+    <div class="page active" id="page-generate">
+      <div class="breadcrumb" id="breadcrumb">Select a vertical and campaign</div>
+      <div class="page-header">
+        <div class="page-title" id="campaign-title">Content Generator</div>
+        <div class="page-subtitle" id="campaign-desc">Select a campaign from the sidebar to get started.</div>
+      </div>
+
+      <div id="generate-content" style="display:none;">
+
+        <!-- CAMPAIGN BRIEF PANEL -->
+        <div class="brief-panel" id="brief-panel" style="display:none;">
+          <div class="brief-panel-title">📋 Campaign Brief <span style="font-size:10px;font-weight:400;color:var(--text-hint);margin-left:4px;">loaded from your Sheet</span></div>
+          <div id="brief-details"></div>
+          <div class="brief-examples" id="brief-examples" style="display:none;">
+            <div style="font-size:10px;font-weight:600;color:var(--text-hint);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;">✅ What worked &nbsp;·&nbsp; ❌ What didn't</div>
+            <div id="brief-good-examples"></div>
+            <div id="brief-bad-examples"></div>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div>
+            <div class="card">
+              <div class="card-title">
+                <div class="card-title-icon" style="background:var(--brand-soft);">✏️</div>
+                Prompt Configuration
+              </div>
+
+              <div class="feedback-banner" id="feedback-banner" style="display:none;">
+                <span>🧠</span>
+                <span id="feedback-banner-text"></span>
+              </div>
+
+              <div class="form-group">
+                <label>Channel</label>
+                <select id="channel">
+                  <option value="WhatsApp">WhatsApp</option>
+                  <option value="Push Notification">Push Notification</option>
+                  <option value="SMS">SMS</option>
+                  <option value="Email">Email</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Additional Context <span style="font-weight:400;color:var(--text-hint);">(car details, price, city etc.)</span></label>
+                <textarea id="userContext" rows="3" placeholder="e.g. Car: Maruti Swift 2020, City: Delhi, Drop: ₹30,000, New Price: ₹5.2L, Lead name: Rahul"></textarea>
+              </div>
+              <div class="form-group">
+                <label>Override Instructions <span style="font-weight:400;color:var(--text-hint);">(optional — AI reads your Sheet by default)</span></label>
+                <textarea id="systemPrompt" rows="3" placeholder="Leave blank to let AI use your campaign brief from the Sheet..."></textarea>
+              </div>
+              <div class="form-group">
+                <label>Number of Variants</label>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;" id="variant-tags">
+                  <span class="tag selected" onclick="selectVariant(this,1)">1</span>
+                  <span class="tag" onclick="selectVariant(this,2)">2</span>
+                  <span class="tag" onclick="selectVariant(this,3)">3</span>
+                  <span class="tag" onclick="selectVariant(this,5)">5</span>
+                </div>
+              </div>
+
+              <div class="save-prompt-bar">
+                <input type="text" id="savedPromptName" placeholder="Name this config (optional)..." />
+                <button class="btn btn-save" style="font-size:12px;padding:6px 12px;white-space:nowrap;" onclick="savePromptConfig()">💾 Save Config</button>
+              </div>
+              <div id="saved-prompts-list" style="margin-top:8px;"></div>
+
+              <button class="btn btn-primary" id="generateBtn" onclick="generateCopy()" style="width:100%;margin-top:12px;">
+                ✦ Generate Copy
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <div class="card" style="min-height:300px;">
+              <div class="card-title">
+                <div class="card-title-icon" style="background:var(--blue-bg);">💡</div>
+                Generated Output
+                <button class="btn btn-ghost" style="margin-left:auto;font-size:11px;padding:4px 8px;" onclick="generateCopy()">🔄 Regenerate</button>
+              </div>
+              <div id="output-area">
+                <div class="empty-state">
+                  <div class="empty-state-icon">✦</div>
+                  <div class="empty-state-text">Output will appear here</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ACTIVITY LOG -->
+        <div class="card">
+          <div class="card-title">
+            <div class="card-title-icon" style="background:var(--bg);">📜</div>
+            Activity Log
+            <button class="btn btn-ghost" style="margin-left:auto;font-size:11px;padding:4px 8px;" onclick="clearLogs()">Clear</button>
+          </div>
+          <div id="campaign-logs" style="max-height:180px;overflow-y:auto;">
+            <div style="font-size:12px;color:var(--text-hint);text-align:center;padding:20px;">No activity yet.</div>
+          </div>
+        </div>
+
+        <!-- LEARNINGS SECTION -->
+        <div class="card" id="learnings-card" style="display:none;">
+          <div class="card-title" style="cursor:pointer;" onclick="toggleLearnings()">
+            <div class="card-title-icon" style="background:var(--good-bg);">🧠</div>
+            Campaign Learnings
+            <span style="font-size:11px;color:var(--text-hint);font-weight:400;margin-left:4px;">from your Sheet</span>
+            <span id="learnings-toggle" style="margin-left:auto;font-size:12px;color:var(--text-hint);">▼ Show</span>
+          </div>
+          <div id="learnings-content" style="display:none;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;" id="learnings-grid"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="no-campaign-msg">
+        <div class="card" style="text-align:center;padding:48px;">
+          <div style="font-size:40px;margin-bottom:16px;">👆</div>
+          <div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:8px;">Select a Campaign</div>
+          <div style="font-size:13px;color:var(--text-muted);">Choose a vertical and campaign from the sidebar to start generating.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REVIEW QUEUE PAGE -->
+    <div class="page" id="page-review">
+      <div class="page-header">
+        <div class="page-title">Review Queue</div>
+        <div class="page-subtitle">Rate generated copies — ratings save to your Google Sheet instantly.</div>
+      </div>
+      <div style="display:flex;gap:10px;margin-bottom:16px;align-items:center;flex-wrap:wrap;">
+        <select style="width:auto;" id="filter-vertical" onchange="filterQueue()">
+          <option value="">All Verticals</option>
+          <option value="Demand">Demand</option>
+          <option value="Supply">Supply</option>
+        </select>
+        <select style="width:auto;" id="filter-channel" onchange="filterQueue()">
+          <option value="">All Channels</option>
+          <option value="WhatsApp">WhatsApp</option>
+          <option value="SMS">SMS</option>
+          <option value="Push Notification">Push Notification</option>
+          <option value="Email">Email</option>
+        </select>
+        <select style="width:auto;" id="filter-status" onchange="filterQueue()">
+          <option value="">All Status</option>
+          <option value="pending">Pending</option>
+          <option value="good">Good</option>
+          <option value="bad">Bad</option>
+        </select>
+        <span id="queue-count" style="font-size:12px;color:var(--text-hint);margin-left:auto;"></span>
+      </div>
+      <div id="review-cards"></div>
+      <div id="review-empty" class="empty-state" style="display:none;">
+        <div class="empty-state-icon">✅</div>
+        <div class="empty-state-text">No items in queue. Generate some copy first!</div>
+      </div>
+    </div>
+
+    <!-- ANALYTICS PAGE -->
+    <div class="page" id="page-analytics">
+      <div class="page-header">
+        <div class="page-title">Analytics</div>
+        <div class="page-subtitle">Performance insights across campaigns and channels.</div>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card stat-blue">
+          <div class="stat-label">Total Generated</div>
+          <div class="stat-value" id="stat-total">0</div>
+          <div class="stat-sub">copies created</div>
+        </div>
+        <div class="stat-card stat-good">
+          <div class="stat-label">Approved</div>
+          <div class="stat-value" id="stat-good">0</div>
+          <div class="stat-sub" id="stat-good-pct">— pass rate</div>
+        </div>
+        <div class="stat-card stat-bad">
+          <div class="stat-label">Rejected</div>
+          <div class="stat-value" id="stat-bad">0</div>
+          <div class="stat-sub" id="stat-bad-pct">— fail rate</div>
+        </div>
+        <div class="stat-card stat-brand">
+          <div class="stat-label">Pending Review</div>
+          <div class="stat-value" id="stat-pending">0</div>
+          <div class="stat-sub">awaiting review</div>
+        </div>
+      </div>
+      <div class="two-col">
+        <div class="card">
+          <div class="card-title">Campaign Performance</div>
+          <div id="campaign-perf"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Channel Breakdown</div>
+          <div id="channel-perf"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">
+          <div class="card-title-icon" style="background:var(--blue-bg);">🤖</div>
+          AI Insights
+          <button class="btn btn-ghost" style="margin-left:auto;font-size:11px;padding:4px 10px;" onclick="generateInsights()">Refresh ↗</button>
+        </div>
+        <div id="insights-area">
+          <div class="empty-state" style="padding:24px;">
+            <div class="empty-state-text">Rate some copy to unlock AI-powered insights.</div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Recent Feedback</div>
+        <div id="recent-training"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ADD CAMPAIGN MODAL -->
+<div class="modal-overlay" id="modal-add-campaign">
+  <div class="modal">
+    <div class="modal-title">➕ Add New Campaign</div>
+    <div class="form-group">
+      <label>Campaign Name</label>
+      <input type="text" id="new-campaign-name" placeholder="e.g. Proactive Re-engagement" />
+    </div>
+    <div class="form-group">
+      <label>Description (optional)</label>
+      <input type="text" id="new-campaign-desc" placeholder="Brief description" />
+    </div>
+    <div class="form-group">
+      <label>Icon (emoji)</label>
+      <input type="text" id="new-campaign-icon" placeholder="📣" maxlength="4" value="📣" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-add-campaign')">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmAddCampaign()">Add Campaign</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== CONFIG =====
+const BRIEFS_URL   = 'https://script.google.com/macros/s/AKfycbzyfCv1AqdKbtMZJSAqp9jJLgFr_S0vjyVjoIK-Ez6d7oh4X6h0_x3lyKiyhC2Zrsg/exec';
+const FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbwPQWBD4WSpAWCjdVNUrV6sfnsEtZo8pF2VmEcDOU2vKZfw8grK5NBGj3E7liBCxxUl/exec';
+
+// ===== CLAUDE API =====
+async function geminiGenerate(prompt) {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': state.apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1024,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
+  return data.content.map(b => b.text || '').join('');
+}
+
+// ===== SHEETS API =====
+async function saveFeedbackToSheet(item) {
+  try {
+    await fetch(FEEDBACK_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        timestamp: item.ts,
+        vertical: item.vertical,
+        campaign: item.campaign,
+        channel: item.channel,
+        copy: item.copy,
+        rating: item.rating,
+        reason: item.reason || '',
+        ctr: item.ctr || '',
+        sent: item.sent || 'no'
+      })
+    });
+    return true;
+  } catch(e) {
+    console.error('Sheet save error:', e);
+    return false;
+  }
+}
+
+async function loadBriefs() {
+  setStatus('briefs', 'loading', 'Loading briefs...');
+  try {
+    const res = await fetch(BRIEFS_URL + '?nocache=' + Date.now());
+    const data = await res.json();
+    state.campaigns = data.campaigns || [];
+    setStatus('briefs', 'connected', `${state.campaigns.length} campaigns loaded`);
+    renderCampaigns();
+    return true;
+  } catch(e) {
+    setStatus('briefs', 'error', 'Failed to load briefs');
+    return false;
+  }
+}
+
+async function loadFeedbackFromSheet() {
+  setStatus('feedback', 'loading', 'Loading feedback...');
+  try {
+    const res = await fetch(FEEDBACK_URL + '?nocache=' + Date.now());
+    const data = await res.json();
+    const rows = data.feedback || [];
+    // Merge sheet feedback into local queue (sheet is source of truth)
+    const sheetItems = rows.map((r, i) => ({
+      id: 'sheet_' + i,
+      ts: r['timestamp'] || r[0] || '',
+      vertical: r['vertical'] || r[1] || '',
+      campaign: r['campaign'] || r[2] || '',
+      channel: r['channel'] || r[3] || '',
+      copy: r['copy'] || r[4] || '',
+      rating: r['rating'] || r[5] || 'pending',
+      reason: r['reason'] || r[6] || '',
+      ctr: r['ctr'] || r[7] || ''
+    })).filter(r => r.copy);
+    // Keep local session items (newly generated, not yet in sheet) + sheet items
+    const localOnly = state.queue.filter(q => !q.id.toString().startsWith('sheet_'));
+    state.queue = [...localOnly, ...sheetItems];
+    saveLocalState();
+    updateBadge();
+    setStatus('feedback', 'connected', `${sheetItems.length} feedback rows synced`);
+    return true;
+  } catch(e) {
+    setStatus('feedback', 'error', 'Failed to load feedback');
+    return false;
+  }
+}
+
+async function loadAllData() {
+  await Promise.all([loadBriefs(), loadFeedbackFromSheet()]);
+}
+
+function setStatus(type, state, msg) {
+  const dot = document.getElementById(type + '-dot');
+  const label = document.getElementById(type + '-status');
+  dot.className = 'status-dot ' + state;
+  label.textContent = (type === 'briefs' ? 'Campaign briefs: ' : 'Feedback library: ') + msg;
+}
+
+// ===== DEFAULT CAMPAIGNS (fallback if sheet not loaded) =====
+const DEFAULT_CAMPAIGNS = {
+  demand: [
+    { name: 'Relay CI', icon: '🔄', vertical: 'demand' },
+    { name: 'Relay PDP', icon: '🚗', vertical: 'demand' },
+    { name: 'Relay Price Drop', icon: '📉', vertical: 'demand' },
+    { name: 'Relay TDC', icon: '📅', vertical: 'demand' },
+    { name: 'Relay Bodytype', icon: '🏎️', vertical: 'demand' },
+    { name: 'Price Drop Manual Event 1', icon: '💰', vertical: 'demand' },
+    { name: 'Price Drop Manual Event 2', icon: '💸', vertical: 'demand' },
+    { name: 'Proactive Generic', icon: '📢', vertical: 'demand' },
+    { name: 'Proactive Sale', icon: '🎯', vertical: 'demand' },
+    { name: 'Dropped Leads', icon: '🔁', vertical: 'demand' },
+    { name: 'PDP Dropped', icon: '👤', vertical: 'demand' },
+  ],
+  supply: [
+    { name: 'L3 Nudges', icon: '📲', vertical: 'supply' },
+    { name: 'Dropped Leads', icon: '🔁', vertical: 'supply' },
+    { name: 'Proactive', icon: '📢', vertical: 'supply' },
+    { name: 'Current Price', icon: '💲', vertical: 'supply' },
+    { name: 'Price Update', icon: '📊', vertical: 'supply' },
+    { name: 'Insurance Expiry', icon: '🛡️', vertical: 'supply' },
+    { name: 'Car Month Expiry', icon: '📅', vertical: 'supply' },
+  ]
+};
+
+const VERTICAL_LABELS = { demand: 'Demand', supply: 'Supply' };
+
+// ===== STATE =====
+function loadLocalState() {
+  try {
+    const s = localStorage.getItem('spinny_state_v4');
+    return s ? JSON.parse(s) : null;
+  } catch(e) { return null; }
+}
+
+function saveLocalState() {
+  try {
+    localStorage.setItem('spinny_state_v4', JSON.stringify({
+      queue: state.queue,
+      logs: state.logs,
+      savedPrompts: state.savedPrompts,
+      customCampaigns: state.customCampaigns
+    }));
+  } catch(e) {}
+}
+
+const _saved = loadLocalState();
+let state = {
+  vertical: 'demand',
+  campaign: null,
+  variants: 1,
+  queue: _saved?.queue || [],
+  logs: _saved?.logs || [],
+  savedPrompts: _saved?.savedPrompts || [],
+  customCampaigns: _saved?.customCampaigns || { demand: [], supply: [] },
+  campaigns: [], // from Google Sheet
+  apiKey: ''
+};
+
+// API key is session-only — not persisted
+
+// ===== HELPERS =====
+function escHtml(t) { return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function connectKey() {
+  const k = document.getElementById('apiKeyInput').value.trim();
+  if (!k) { alert('Please enter your Claude API key.'); return; }
+  state.apiKey = k;
+  document.getElementById('apiKeyInput').value = '';
+  document.getElementById('apiKeyInput').placeholder = '●●●●●●●●●●●●●●●●';
+  document.getElementById('apiKeyInput').disabled = true;
+  document.getElementById('connectBtn').style.display = 'none';
+  document.getElementById('disconnectBtn').style.display = '';
+  document.getElementById('key-status').textContent = '✓ Connected';
+  document.getElementById('key-status').style.color = 'var(--good)';
+}
+
+function disconnectKey() {
+  state.apiKey = '';
+  document.getElementById('apiKeyInput').value = '';
+  document.getElementById('apiKeyInput').placeholder = 'sk-ant-...';
+  document.getElementById('apiKeyInput').disabled = false;
+  document.getElementById('connectBtn').style.display = '';
+  document.getElementById('disconnectBtn').style.display = 'none';
+  document.getElementById('key-status').textContent = 'Disconnected';
+  document.getElementById('key-status').style.color = 'var(--text-hint)';
+  setTimeout(() => document.getElementById('key-status').textContent = '', 2000);
+}
+
+function showPage(name, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  btn.classList.add('active');
+  if (name === 'analytics') refreshAnalytics();
+  if (name === 'review') renderQueue();
+}
+
+function updateBadge() {
+  document.getElementById('pending-badge').textContent = state.queue.length + ' saved';
+}
+
+// ===== SIDEBAR =====
+function selectVertical(v, btn) {
+  state.vertical = v;
+  state.campaign = null;
+  document.querySelectorAll('.vertical-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderCampaigns();
+  document.getElementById('generate-content').style.display = 'none';
+  document.getElementById('no-campaign-msg').style.display = 'block';
+}
+
+function getCampaignsForVertical(vertical) {
+  // Always show all defaults
+  const defaults = (DEFAULT_CAMPAIGNS[vertical] || []).map(c => ({ ...c }));
+
+  // Sheet campaigns for this vertical
+  const sheetCampaigns = state.campaigns
+    .filter(c => (c.VERTICAL || '').toLowerCase() === vertical);
+
+  // Enrich defaults that have a matching sheet brief
+  const enriched = defaults.map(d => {
+    const dNorm = d.name.toLowerCase().replace(/[\s_\-]/g,'');
+    const match = sheetCampaigns.find(s =>
+      s.CAMPAIGN_NAME.toLowerCase().replace(/[\s_\-]/g,'') === dNorm
+    );
+    return match ? { ...d, fromSheet: true, brief: match } : d;
+  });
+
+  // Add sheet campaigns that don't match any default
+  const defaultNamesNorm = defaults.map(d => d.name.toLowerCase().replace(/[\s_\-]/g,''));
+  const extraSheet = sheetCampaigns
+    .filter(s => !defaultNamesNorm.includes(s.CAMPAIGN_NAME.toLowerCase().replace(/[\s_\-]/g,'')))
+    .map(s => ({ name: s.CAMPAIGN_NAME, icon: '📋', fromSheet: true, brief: s, vertical }));
+
+  // Custom manually added campaigns
+  const custom = (state.customCampaigns[vertical] || []).map(c => ({ ...c, fromSheet: false }));
+
+  return [...enriched, ...extraSheet, ...custom];
+}
+
+function renderCampaigns() {
+  const list = document.getElementById('campaign-list');
+  list.innerHTML = '';
+  getCampaignsForVertical(state.vertical).forEach(c => {
+    const btn = document.createElement('button');
+    btn.className = 'campaign-btn';
+    btn.innerHTML = `<span class="campaign-icon">${c.icon}</span>${escHtml(c.name)}`;
+    if (c.fromSheet) btn.innerHTML += `<span style="margin-left:auto;font-size:9px;color:var(--good);font-weight:600;">●</span>`;
+    btn.onclick = () => selectCampaign(c, btn);
+    list.appendChild(btn);
+  });
+}
+
+function selectCampaign(c, btn) {
+  state.campaign = c;
+  document.querySelectorAll('.campaign-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('breadcrumb').innerHTML = `${VERTICAL_LABELS[state.vertical]} <span>›</span> <span>${escHtml(c.name)}</span>`;
+  document.getElementById('campaign-title').textContent = c.name;
+  document.getElementById('campaign-desc').textContent = c.brief?.GOAL || c.desc || '';
+  document.getElementById('generate-content').style.display = 'block';
+  document.getElementById('no-campaign-msg').style.display = 'none';
+  document.getElementById('output-area').innerHTML = `<div class="empty-state"><div class="empty-state-icon">✦</div><div class="empty-state-text">Output will appear here</div></div>`;
+  renderBriefPanel(c);
+  renderLearnings(c);
+  showFeedbackBanner();
+  renderSavedPrompts();
+  renderLogs();
+}
+
+// ===== BRIEF PANEL =====
+function renderBriefPanel(c) {
+  const panel = document.getElementById('brief-panel');
+  const details = document.getElementById('brief-details');
+  const examplesWrap = document.getElementById('brief-examples');
+  const goodEl = document.getElementById('brief-good-examples');
+  const badEl = document.getElementById('brief-bad-examples');
+
+  if (!c.brief) { panel.style.display = 'none'; return; }
+
+  const b = c.brief;
+  const fields = [
+    ['Goal', b.GOAL],
+    ['Segment', b.USER_SEGMENT],
+    ['Emotion', b.EMOTION],
+    ['Timing', b.WAVE_TIMING],
+    ['Must Include', b.MUST_INCLUDE],
+    ['Must Avoid', b.MUST_AVOID],
+  ].filter(f => f[1]);
+
+  details.innerHTML = fields.map(([k,v]) =>
+    `<div class="brief-row"><span class="brief-key">${k}</span><span class="brief-val">${escHtml(v)}</span></div>`
+  ).join('');
+
+  // Good examples
+  const goodKeys = Object.keys(b).filter(k => /^GOOD_\d+$/.test(k));
+  const badKeys = Object.keys(b).filter(k => /^BAD_\d+$/.test(k));
+
+  // Examples removed from top — shown in Learnings section at bottom
+  examplesWrap.style.display = 'none';
+
+  panel.style.display = 'block';
+}
+
+// ===== LEARNINGS SECTION =====
+function renderLearnings(c) {
+  const card = document.getElementById('learnings-card');
+  const grid = document.getElementById('learnings-grid');
+  if (!c.brief) { card.style.display = 'none'; return; }
+
+  const b = c.brief;
+  const goodKeys = Object.keys(b).filter(k => /^GOOD_\d+$/.test(k));
+  const badKeys = Object.keys(b).filter(k => /^BAD_\d+$/.test(k));
+
+  if (!goodKeys.length && !badKeys.length) { card.style.display = 'none'; return; }
+
+  let goodHTML = '';
+  let badHTML = '';
+
+  if (goodKeys.length) {
+    goodHTML = `<div>
+      <div style="font-size:11px;font-weight:600;color:var(--good);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">✅ What Worked (${goodKeys.length})</div>
+      ${goodKeys.map((k,i) => `
+        <div style="background:var(--good-bg);border:1px solid #B6E6CF;border-radius:8px;padding:12px;margin-bottom:10px;">
+          <div style="font-size:12px;font-weight:600;color:var(--text);line-height:1.5;margin-bottom:6px;">${escHtml(b[k])}</div>
+          ${b[k+'_WHY'] ? `<div style="font-size:11px;color:var(--good);line-height:1.5;">↳ ${escHtml(b[k+'_WHY'])}</div>` : ''}
+        </div>`).join('')}
+    </div>`;
+  }
+
+  if (badKeys.length) {
+    badHTML = `<div>
+      <div style="font-size:11px;font-weight:600;color:var(--bad);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">❌ What Didn't Work (${badKeys.length})</div>
+      ${badKeys.map((k,i) => `
+        <div style="background:var(--bad-bg);border:1px solid #F4BEBE;border-radius:8px;padding:12px;margin-bottom:10px;">
+          <div style="font-size:12px;font-weight:600;color:var(--text);line-height:1.5;margin-bottom:6px;">${escHtml(b[k])}</div>
+          ${b[k+'_WHY'] ? `<div style="font-size:11px;color:var(--bad);line-height:1.5;">↳ ${escHtml(b[k+'_WHY'])}</div>` : ''}
+        </div>`).join('')}
+    </div>`;
+  }
+
+  grid.innerHTML = (goodHTML || '<div></div>') + (badHTML || '<div></div>');
+  card.style.display = 'block';
+}
+
+function toggleLearnings() {
+  const content = document.getElementById('learnings-content');
+  const toggle = document.getElementById('learnings-toggle');
+  const isHidden = content.style.display === 'none';
+  content.style.display = isHidden ? 'block' : 'none';
+  toggle.textContent = isHidden ? '▲ Hide' : '▼ Show';
+}
+
+// ===== FEEDBACK MEMORY =====
+function getCampaignFeedback() {
+  if (!state.campaign) return [];
+  return state.queue.filter(i =>
+    i.campaign === state.campaign.name &&
+    i.vertical === VERTICAL_LABELS[state.vertical] &&
+    i.reason && i.reason.trim()
+  );
+}
+
+function showFeedbackBanner() {
+  const banner = document.getElementById('feedback-banner');
+  const feedbacks = getCampaignFeedback();
+  if (!feedbacks.length) { banner.style.display = 'none'; return; }
+  const good = feedbacks.filter(i => i.rating === 'good').length;
+  const bad = feedbacks.filter(i => i.rating === 'bad').length;
+  let parts = [];
+  if (good) parts.push(`${good} approved pattern${good>1?'s':''}`);
+  if (bad) parts.push(`${bad} rejected pattern${bad>1?'s':''}`);
+  document.getElementById('feedback-banner-text').innerHTML = `<strong>Memory active:</strong> ${parts.join(' · ')} from previous reviews will guide generation.`;
+  banner.style.display = 'flex';
+}
+
+function buildFeedbackContext() {
+  const feedbacks = getCampaignFeedback();
+  if (!feedbacks.length) return '';
+  const good = feedbacks.filter(i => i.rating === 'good').slice(0, 5);
+  const bad = feedbacks.filter(i => i.rating === 'bad').slice(0, 5);
+  let ctx = '\n\nPREVIOUS FEEDBACK FROM YOUR TEAM:\n';
+  if (good.length) {
+    ctx += '\n✅ APPROVED (these worked — understand why, do not copy verbatim):\n';
+    good.forEach(i => { ctx += `- "${i.copy.slice(0,120)}"${i.reason ? ` | Why it worked: ${i.reason}` : ''}\n`; });
+  }
+  if (bad.length) {
+    ctx += '\n❌ REJECTED (these failed — never repeat these patterns):\n';
+    bad.forEach(i => { ctx += `- "${i.copy.slice(0,120)}"${i.reason ? ` | Why it failed: ${i.reason}` : ''}\n`; });
+  }
+  return ctx;
+}
+
+function buildBriefContext() {
+  if (!state.campaign?.brief) return '';
+  const b = state.campaign.brief;
+  let ctx = '\nCAMPAIGN BRIEF FROM SHEET:\n';
+  ctx += `Campaign: ${b.CAMPAIGN_NAME}\n`;
+  if (b.VERTICAL) ctx += `Vertical: ${b.VERTICAL}\n`;
+  if (b.GOAL) ctx += `Goal: ${b.GOAL}\n`;
+  if (b.USER_SEGMENT) ctx += `User Segment: ${b.USER_SEGMENT}\n`;
+  if (b.EMOTION) ctx += `Emotion to trigger: ${b.EMOTION}\n`;
+  if (b.WAVE_TIMING) ctx += `Wave/Nudge timing: ${b.WAVE_TIMING}\n`;
+  if (b.MUST_INCLUDE) ctx += `Must always include: ${b.MUST_INCLUDE}\n`;
+  if (b.MUST_AVOID) ctx += `Never use: ${b.MUST_AVOID}\n`;
+  if (b.CREATIVE_DIRECTION) ctx += `Creative direction: ${b.CREATIVE_DIRECTION}\n`;
+
+  const goodKeys = Object.keys(b).filter(k => /^GOOD_\d+$/.test(k));
+  const badKeys = Object.keys(b).filter(k => /^BAD_\d+$/.test(k));
+
+  if (goodKeys.length) {
+    ctx += '\nAPPROVED EXAMPLES (study structure and tone — DO NOT copy verbatim, write fresh copy inspired by these):\n';
+    goodKeys.forEach(k => {
+      ctx += `- "${b[k]}"`;
+      if (b[k+'_WHY']) ctx += ` → Why it worked: ${b[k+'_WHY']}`;
+      ctx += '\n';
+    });
+  }
+  if (badKeys.length) {
+    ctx += '\nREJECTED EXAMPLES (understand what failed — never use these patterns):\n';
+    badKeys.forEach(k => {
+      ctx += `- "${b[k]}"`;
+      if (b[k+'_WHY']) ctx += ` → Why it failed: ${b[k+'_WHY']}`;
+      ctx += '\n';
+    });
+  }
+  return ctx;
+}
+
+// ===== GENERATE COPY =====
+function selectVariant(el, n) {
+  state.variants = n;
+  document.querySelectorAll('#variant-tags .tag').forEach(t => t.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+async function generateCopy() {
+  if (!state.apiKey) { alert('Please connect your Claude API key first.'); return; }
+  const btn = document.getElementById('generateBtn');
+  const out = document.getElementById('output-area');
+  const channel = document.getElementById('channel').value;
+  const userOverride = document.getElementById('systemPrompt').value.trim();
+  const userCtx = document.getElementById('userContext').value.trim();
+  const n = state.variants;
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Generating...';
+  out.innerHTML = `<div class="output-block loading">Reading your campaign brief and writing ${n > 1 ? n + ' variants' : 'copy'}…</div>`;
+
+  const briefCtx = buildBriefContext();
+  const feedbackCtx = buildFeedbackContext();
+
+  // Channel-specific format rules
+  let channelRules = '';
+  if (channel === 'Push Notification') {
+    channelRules = `
+PUSH NOTIFICATION FORMAT — STRICT:
+- Title: MAX 27 characters (including spaces). Count every character. Never exceed this.
+- Body: MAX 80 characters (including spaces). Count every character. Never exceed this.
+- Output format must be exactly:
+  Title: [your title here]
+  Body: [your body here]
+- No emojis in title unless it fits within 27 chars
+- Title must state the key fact (price drop, car name, action)
+- Body must give the specific detail and nudge to act`;
+  } else if (channel === 'WhatsApp') {
+    channelRules = `
+WHATSAPP FORMAT — STRICT:
+Output must have exactly 3 labeled parts:
+
+  Title: [bold punchy opener — max 60 chars — state the key fact: price, offer, car name]
+  Body: [2 short lines separated by a blank line — line 1: personalised context (Hey [Name], your car / the sale...); line 2: the key action nudge]
+  CTA: [single line — e.g. "Click here to book your test drive." or "Book your car now."]
+
+Rules:
+- End with "-Spinny" on a new line after the CTA (this is part of the message, not a label)
+- Tone: warm, direct — like a message from someone at Spinny who knows you
+- Use [Name] placeholder if name not provided
+- Use [Make Model] placeholder if car not provided
+- No marketing fluff — be specific and human
+- Do NOT use Headline/Message labels — use Title/Body/CTA exactly as shown above
+
+REFERENCE EXAMPLES (study structure, do not copy verbatim):
+
+Example A — Pre-buzz (sale tomorrow):
+Title: Sale Tomorrow: ₹2.5L OFF*!
+Body: Hey [Name], 10,000+ Spinny cars go on sale tomorrow, and your preferred car is one of them.
+
+Click here to book your test drive:
+CTA: [link]
+-Spinny
+
+Example B — Live sale:
+Title: Sale is Live on 10,000+ Spinny Cars! 🚗
+Body: Hey [Name], your preferred car is part of our 1-day sale today. Grab upto ₹2.5 Lakh OFF before the window closes.
+
+Click here to book your car.
+CTA: [link]
+-Spinny
+
+Example C — Personalised pre-buzz:
+Title: Tomorrow is the Day! Upto ₹2.5 Lakh OFF Awaits! 🚗
+Body: Hey [Name], your preferred [Make Model] and 10,000+ cars are going live on a 1-day sale.
+
+Click here to book your test drive.
+CTA: [link]
+-Spinny
+
+Example D — Live sale with date:
+Title: 16th April. Upto ₹2.5 Lakh OFF. Go. 🚗
+Body: Hey [Name], our one-day sale is live now on all Spinny cars.
+
+Click here to book your car before midnight.
+CTA: [link]
+-Spinny`;
+  } else if (channel === 'SMS') {
+    channelRules = `
+SMS FORMAT — STRICT:
+- Max 160 characters total
+- Single block of text, no labels
+- Include car name + key number + CTA in one line`;
+  }
+
+  const systemLayer = userOverride ||
+    `You are a senior marketing copy writer for Spinny, India's largest used car platform. Your job is to write high-converting ${channel} copy for the campaign described below.
+
+CORE RULES:
+- Write for middle-class Indian buyers, many of whom are first-time car buyers
+- Be specific — use real numbers, car names, prices wherever provided
+- Never use: "dream car", "slashed", "unlock", "amazing offer", or vague hype language
+- Copies that name the price change clearly always outperform vague ones
+- Personalization with make/model drives qualified clicks
+- Each variant should be a DIFFERENT creative angle — don't repeat the same structure
+- Do NOT copy the approved examples verbatim — take inspiration from what works but write fresh copy
+- Across variants, independently decide the creative angle for each — do not default to the same structure every time
+- Think like a creative strategist: what different emotional hooks, information angles, or structural approaches could work for this campaign and segment?
+- Examples of angles to consider (pick what fits, don't always use all): leading with drop amount, leading with new price only, curiosity hook without showing price, social proof, urgency via scarcity, personalisation-first, benefit-first, question opener
+- Each variant should feel like a genuinely different creative bet — not the same copy with words swapped
+- Never explain your creative choices in the output — just write the copy
+${channelRules}`;
+
+  const userMsg = `Channel: ${channel}
+Variants needed: ${n}
+${userCtx ? 'Campaign context: ' + userCtx : ''}
+
+${briefCtx}
+${feedbackCtx}
+
+Generate ${n} copy variant${n > 1 ? 's' : ''} now.${n > 1 ? ' Separate each with "--- VARIANT X ---".' : ''}
+Follow the channel format rules above exactly. Character limits are hard limits — count them.`;
+
+  const fullPrompt = systemLayer + '\n\n' + userMsg;
+
+  try {
+    const text = await geminiGenerate(fullPrompt);
+    renderVariants(text, channel, n);
+    addLog('GENERATE', `${n} variant(s) · ${state.campaign?.name} · ${channel}`);
+  } catch(e) {
+    out.innerHTML = `<div class="output-block" style="color:var(--bad);">Error: ${e.message}</div>`;
+  }
+  btn.disabled = false;
+  btn.innerHTML = '✦ Generate Copy';
+}
+
+// ===== PARSE & RENDER VARIANTS =====
+function parseVariants(text, n) {
+  if (n === 1) return [text.trim()];
+  const markerRegex = /---\s*VARIANT\s*\d+\s*---/gi;
+  const parts = text.split(markerRegex).map(s => s.trim()).filter(s => s.length > 0);
+  if (parts.length >= n) return parts.slice(0, n);
+  const numbered = text.split(/\n(?=\d+[\.\)]\s)/);
+  if (numbered.length >= n) return numbered.slice(0, n).map(s => s.replace(/^\d+[\.\)]\s*/, '').trim());
+  const lines = text.split('\n').filter(l => l.trim());
+  const chunkSize = Math.ceil(lines.length / n);
+  const chunks = [];
+  for (let i = 0; i < n; i++) chunks.push(lines.slice(i * chunkSize, (i + 1) * chunkSize).join('\n'));
+  return chunks;
+}
+
+function parseWAContent(rawText) {
+  let headline = '', body = '', cta = '';
+  const clean = rawText.replace(/\*\*/g, '').replace(/^#+\s*/gm, '');
+
+  // Try Title / Body / CTA labels first
+  const titleMatch = clean.match(/^Title:\s*(.+)/im);
+  const ctaMatch   = clean.match(/^CTA:\s*(.+)/im);
+  const bodyMatch  = clean.match(/^Body:\s*([\s\S]*?)(?=^CTA:|^-Spinny|$)/im);
+
+  if (titleMatch) headline = titleMatch[1].trim();
+  if (ctaMatch)   cta = ctaMatch[1].trim();
+  if (bodyMatch)  body = bodyMatch[1].trim();
+
+  // Fallback: Headline / Message labels (old format)
+  if (!headline) {
+    const hlMatch  = clean.match(/^Headline[:\s]+(.+)/im);
+    const msgMatch = clean.match(/^Message[:\s]+([\s\S]*?)(?=^CTA:|$)/im);
+    if (hlMatch)  headline = hlMatch[1].trim();
+    if (msgMatch) body = msgMatch[1].trim();
+  }
+
+  // Last resort: first non-empty line = title, rest = body
+  if (!headline && !body) {
+    const lines = clean.split('\n').map(l => l.trim()).filter(l => l && !/^-Spinny/i.test(l));
+    headline = lines[0] || '';
+    body = lines.slice(1).join('\n').trim();
+  }
+  if (headline && !body) { body = headline; headline = ''; }
+  return { headline, body, cta };
+}
+
+function parsePushContent(rawText) {
+  const titleMatch = rawText.match(/\*\*Title[:\*]*\*?\*?\s*[:–-]?\s*(.*)/i) || rawText.match(/Title[:\s]+(.+)/i);
+  const bodyMatch = rawText.match(/\*\*Body[:\*]*\*?\*?\s*[:–-]?\s*([\s\S]*?)(?=\*\*|$)/i) || rawText.match(/Body[:\s]+([\s\S]*)/i);
+  if (titleMatch && bodyMatch) {
+    return { title: titleMatch[1].replace(/\*\*/g,'').trim(), body: bodyMatch[1].replace(/\*\*/g,'').trim() };
+  }
+  const lines = rawText.split('\n').map(l => l.replace(/\*\*/g,'').trim()).filter(l => l);
+  return { title: lines[0] || '', body: lines.slice(1).join('\n') || '' };
+}
+
+function charBadge(label, count, limit) {
+  const cls = count > limit ? 'over' : count > limit * 0.85 ? 'warn' : 'ok';
+  return `<span class="char-badge ${cls}">${label}: ${count}/${limit} chars</span>`;
+}
+
+function buildPreviewHTML(rawText, channel) {
+  const isWA = channel.toLowerCase().includes('whatsapp');
+  const isPush = channel.toLowerCase().includes('push');
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+  if (isWA) {
+    const { headline, body, cta } = parseWAContent(rawText);
+    const titleLen = headline.length;
+    const bodyLen = body.length;
+    return `<div class="wa-preview-wrap">
+      <div class="wa-phone-bar">
+        <div class="wa-phone-avatar">🚗</div>
+        <div>
+          <div class="wa-phone-name">Spinny</div>
+          <div class="wa-phone-sub">online</div>
+        </div>
+      </div>
+      <div class="wa-body-area">
+        <div class="wa-bubble">
+          ${headline ? `<div class="wa-bubble-bold">${escHtml(headline)}</div>` : ''}
+          ${body ? `<div class="wa-bubble-body">${escHtml(body).replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>')}</div>` : ''}
+          ${cta ? `<div class="wa-bubble-cta">${escHtml(cta)}</div>` : ''}
+          <div class="wa-bubble-footer">
+            <span class="wa-bubble-time">${timeStr}</span>
+            <span class="wa-tick">✓✓</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="padding:4px 2px;">
+      ${headline ? charBadge('Title', titleLen, 60) : ''}
+      ${body ? charBadge('Body', bodyLen, 200) : ''}
+    </div>`;
+  }
+
+  if (isPush) {
+    const { title, body } = parsePushContent(rawText);
+    const titleLen = title.length;
+    const bodyLen = body.length;
+    return `<div class="push-preview-wrap">
+      <div class="push-pill">
+        <div class="push-pill-icon">🚗</div>
+        <div class="push-pill-content">
+          <div class="push-pill-header">
+            <span class="push-pill-app">Spinny</span>
+            <span class="push-pill-time">now</span>
+          </div>
+          <div class="push-pill-title">${escHtml(title)}</div>
+          ${body ? `<div class="push-pill-body">${escHtml(body)}</div>` : ''}
+        </div>
+      </div>
+    </div>
+    <div style="padding:4px 2px;">
+      ${charBadge('Title', titleLen, 27)}
+      ${body ? charBadge('Body', bodyLen, 80) : ''}
+    </div>`;
+  }
+
+  const cleaned = rawText.replace(/\*\*/g,'').trim();
+  return `<div style="background:#f0f0f0;border-radius:var(--radius);padding:14px 16px;">
+    <div style="font-size:13px;line-height:1.6;color:var(--text);white-space:pre-wrap;font-family:-apple-system,sans-serif;">${escHtml(cleaned)}</div>
+    <div style="padding:4px 2px;">${charBadge('SMS', cleaned.length, 160)}</div>
+  </div>`;
+}
+
+function renderVariants(text, channel, n) {
+  const out = document.getElementById('output-area');
+  const variants = parseVariants(text, n);
+  out.innerHTML = '';
+  variants.forEach((v, i) => {
+    const div = document.createElement('div');
+    div.className = 'variant-block';
+    div.id = `variant-${i}`;
+    div.innerHTML = `
+      <div class="variant-header">
+        <span class="variant-label">VARIANT ${i + 1}</span>
+        <button class="btn btn-ghost" style="font-size:11px;padding:3px 8px;" onclick="copyVariantText(${i})">📋 Copy</button>
+      </div>
+      <div style="padding:14px 16px;" id="variant-preview-${i}">${buildPreviewHTML(v, channel)}</div>
+      <div style="display:none;" id="variant-text-${i}">${escHtml(v)}</div>
+      <div class="variant-actions" id="variant-actions-${i}">
+        <button class="btn btn-good" id="variant-good-${i}" onclick="rateVariant(${i},'good','${escHtml(channel).replace(/'/g,"\\'")}')">👍 Good</button>
+        <button class="btn btn-bad" id="variant-bad-${i}" onclick="rateVariant(${i},'bad','${escHtml(channel).replace(/'/g,"\\'")}')">👎 Bad</button>
+        <span class="variant-char-count">${v.replace(/\*\*/g,'').trim().length} chars</span>
+      </div>
+      <div class="variant-feedback" id="variant-feedback-${i}">
+        <div class="variant-feedback-row">
+          <input type="text" placeholder="Why is this good/bad? (optional but helps training)" id="variant-note-${i}" style="font-size:12px;" />
+          <button class="btn btn-save" style="font-size:11px;padding:5px 10px;white-space:nowrap;" onclick="saveVariantFeedback(${i},'${escHtml(channel).replace(/'/g,"\\'")}')">💾 Save to Sheet</button>
+        </div>
+        <div class="variant-saved-indicator" id="variant-saved-${i}">✓ Saved to Google Sheet</div>
+      </div>
+    `;
+    out.appendChild(div);
+  });
+  window._currentVariants = variants;
+  window._pendingRatings = {};
+}
+
+function copyVariantText(idx) {
+  const text = document.getElementById(`variant-text-${idx}`).textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector(`#variant-${idx} .variant-header button`);
+    btn.textContent = '✓ Copied!';
+    setTimeout(() => btn.textContent = '📋 Copy', 1500);
+  });
+}
+
+function rateVariant(idx, rating, channel) {
+  const goodBtn = document.getElementById(`variant-good-${idx}`);
+  const badBtn = document.getElementById(`variant-bad-${idx}`);
+  goodBtn.classList.toggle('active-rating', rating === 'good');
+  badBtn.classList.toggle('active-rating', rating === 'bad');
+  goodBtn.classList.toggle('btn-ghost', rating !== 'good');
+  badBtn.classList.toggle('btn-ghost', rating !== 'bad');
+  if (!window._pendingRatings) window._pendingRatings = {};
+  window._pendingRatings[idx] = rating;
+}
+
+async function saveVariantFeedback(idx, channel) {
+  const text = (window._currentVariants || [])[idx];
+  if (!text) return;
+  const note = document.getElementById(`variant-note-${idx}`).value;
+  const rating = (window._pendingRatings || {})[idx] || 'pending';
+  const ctr = document.getElementById(`variant-ctr-${idx}`)?.value || '';
+  const sent = document.getElementById(`variant-sent-${idx}`)?.checked ? 'yes' : 'no';
+  const item = {
+    id: Date.now() + idx,
+    vertical: VERTICAL_LABELS[state.vertical],
+    campaign: state.campaign?.name || 'Unknown',
+    channel,
+    copy: text,
+    rating,
+    reason: note,
+    ctr,
+    sent,
+    ts: new Date().toLocaleString('en-IN')
+  };
+
+  // Save to local queue
+  const exists = state.queue.find(q => q.copy === text && q.campaign === item.campaign);
+  if (exists) { exists.rating = rating; exists.reason = note; }
+  else state.queue.unshift(item);
+  saveLocalState();
+  updateBadge();
+  showFeedbackBanner();
+
+  // Save to Google Sheet
+  const savedEl = document.getElementById(`variant-saved-${idx}`);
+  savedEl.style.display = 'block';
+  savedEl.textContent = '⏳ Saving to Sheet...';
+  const ok = await saveFeedbackToSheet(item);
+  savedEl.textContent = ok ? '✓ Saved to Google Sheet' : '✓ Saved locally (Sheet sync pending)';
+  addLog('SAVE', `Variant ${idx+1} rated "${rating}" · ${state.campaign?.name}`);
+  setTimeout(() => savedEl.style.display = 'none', 3000);
+}
+
+// ===== SAVE PROMPT CONFIG =====
+function savePromptConfig() {
+  const name = document.getElementById('savedPromptName').value.trim();
+  if (!name) { alert('Give this config a name first.'); return; }
+  const config = {
+    id: Date.now(), name,
+    campaign: state.campaign?.name || '',
+    vertical: state.vertical,
+    channel: document.getElementById('channel').value,
+    systemPrompt: document.getElementById('systemPrompt').value,
+    userContext: document.getElementById('userContext').value,
+    variants: state.variants,
+    ts: new Date().toLocaleString('en-IN')
+  };
+  state.savedPrompts.unshift(config);
+  saveLocalState();
+  document.getElementById('savedPromptName').value = '';
+  renderSavedPrompts();
+}
+
+function renderSavedPrompts() {
+  const container = document.getElementById('saved-prompts-list');
+  const relevant = state.savedPrompts.filter(p => p.vertical === state.vertical && p.campaign === (state.campaign?.name || ''));
+  if (!relevant.length) { container.innerHTML = ''; return; }
+  container.innerHTML = `
+    <div style="font-size:11px;color:var(--text-hint);margin-bottom:6px;font-weight:500;">SAVED CONFIGS</div>
+    ${relevant.map(p => `
+      <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="font-size:12px;flex:1;color:var(--text);">${escHtml(p.name)}</span>
+        <span style="font-size:10px;color:var(--text-hint);">${p.ts}</span>
+        <button class="btn btn-ghost" style="font-size:10px;padding:3px 7px;" onclick="loadPromptConfig(${p.id})">Load</button>
+        <button class="btn btn-ghost" style="font-size:10px;padding:3px 7px;color:var(--bad);" onclick="deletePromptConfig(${p.id})">✕</button>
+      </div>
+    `).join('')}`;
+}
+
+function loadPromptConfig(id) {
+  const config = state.savedPrompts.find(p => p.id === id);
+  if (!config) return;
+  document.getElementById('systemPrompt').value = config.systemPrompt;
+  document.getElementById('userContext').value = config.userContext;
+  document.getElementById('channel').value = config.channel;
+  state.variants = config.variants;
+  document.querySelectorAll('#variant-tags .tag').forEach(t => {
+    t.classList.toggle('selected', parseInt(t.textContent) === config.variants);
+  });
+}
+
+function deletePromptConfig(id) {
+  state.savedPrompts = state.savedPrompts.filter(p => p.id !== id);
+  saveLocalState();
+  renderSavedPrompts();
+}
+
+// ===== REVIEW QUEUE =====
+function renderQueue() {
+  const cont = document.getElementById('review-cards');
+  const vf = document.getElementById('filter-vertical').value;
+  const cf = document.getElementById('filter-channel').value;
+  const sf = document.getElementById('filter-status').value;
+  let items = state.queue.filter(i =>
+    (!vf || i.vertical === vf) &&
+    (!cf || i.channel === cf) &&
+    (!sf || i.rating === sf)
+  );
+  document.getElementById('queue-count').textContent = items.length + ' items';
+  document.getElementById('review-empty').style.display = items.length ? 'none' : 'block';
+  cont.innerHTML = '';
+  items.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'card';
+    div.style.marginBottom = '12px';
+    div.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+        <span class="badge badge-channel">${escHtml(item.channel)}</span>
+        <span style="font-size:11px;color:var(--text-muted);">${escHtml(item.vertical)} › ${escHtml(item.campaign)}</span>
+        <span class="badge ${item.rating==='good'?'badge-good':item.rating==='bad'?'badge-bad':'badge-pending'}">${item.rating}</span>
+        <span style="font-size:11px;color:var(--text-hint);margin-left:auto;">${item.ts}</span>
+      </div>
+      <div style="font-size:13px;line-height:1.6;color:var(--text);background:var(--bg);padding:12px;border-radius:8px;border:1px solid var(--border);font-family:'DM Mono',monospace;">${escHtml(item.copy)}</div>
+      <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+        ${item.ctr ? `<span style="font-size:11px;color:var(--good);font-weight:500;background:var(--good-bg);padding:2px 8px;border-radius:20px;">CTR: ${item.ctr}</span>` : ''}
+        ${item.sent === 'yes' ? `<span style="font-size:11px;color:var(--blue);font-weight:500;background:var(--blue-bg);padding:2px 8px;border-radius:20px;">✓ Sent</span>` : ''}
+      </div>
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+        <input type="text" placeholder="Feedback note (one liner)…" value="${escHtml(item.reason||'')}" oninput="updateReason(${item.id},this.value)" style="font-size:12px;flex:1;" />
+        <input type="text" placeholder="CTR %" value="${escHtml(item.ctr||'')}" oninput="updateCtr(${item.id},this.value)" style="font-size:12px;width:80px;" />
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px;align-items:center;">
+        <button class="btn btn-good ${item.rating==='good'?'active-rating':''}" onclick="rerate(${item.id},'good',this)">👍 Good</button>
+        <button class="btn btn-bad ${item.rating==='bad'?'active-rating':''}" onclick="rerate(${item.id},'bad',this)">👎 Bad</button>
+        <button class="btn btn-save" style="font-size:12px;padding:6px 12px;" onclick="saveQueueItem(${item.id})">💾 Update Sheet</button>
+        <button class="btn btn-ghost" style="margin-left:auto;font-size:11px;" onclick="removeItem(${item.id})">Remove</button>
+      </div>
+      <div id="queue-saved-${item.id}" style="display:none;font-size:11px;color:var(--good);font-weight:500;margin-top:6px;">✓ Updated</div>
+    `;
+    cont.appendChild(div);
+  });
+}
+
+function filterQueue() { renderQueue(); }
+function updateReason(id, v) { const i = state.queue.find(x => x.id === id); if (i) i.reason = v; }
+function updateCtr(id, v) { const i = state.queue.find(x => x.id === id); if (i) i.ctr = v; }
+
+function rerate(id, r, btn) {
+  const i = state.queue.find(x => x.id === id);
+  if (i) { i.rating = r; renderQueue(); }
+}
+
+async function saveQueueItem(id) {
+  const i = state.queue.find(x => x.id === id);
+  if (!i) return;
+  saveLocalState();
+  await saveFeedbackToSheet(i);
+  addLog('RATE', `Feedback updated: "${i.copy.slice(0,50)}…" → ${i.rating}`);
+  const el = document.getElementById(`queue-saved-${id}`);
+  if (el) { el.style.display = 'block'; setTimeout(() => el.style.display = 'none', 2000); }
+}
+
+function removeItem(id) {
+  state.queue = state.queue.filter(x => x.id !== id);
+  saveLocalState();
+  renderQueue();
+  updateBadge();
+}
+
+// ===== ADD CAMPAIGN MODAL =====
+function openAddCampaignModal() { document.getElementById('modal-add-campaign').classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function confirmAddCampaign() {
+  const name = document.getElementById('new-campaign-name').value.trim();
+  if (!name) { alert('Enter a campaign name.'); return; }
+  const desc = document.getElementById('new-campaign-desc').value.trim() || '';
+  const icon = document.getElementById('new-campaign-icon').value.trim() || '📣';
+  const id = 'custom_' + Date.now();
+  if (!state.customCampaigns[state.vertical]) state.customCampaigns[state.vertical] = [];
+  state.customCampaigns[state.vertical].push({ id, name, desc, icon, vertical: state.vertical, fromSheet: false });
+  saveLocalState();
+  renderCampaigns();
+  closeModal('modal-add-campaign');
+  document.getElementById('new-campaign-name').value = '';
+  document.getElementById('new-campaign-desc').value = '';
+  document.getElementById('new-campaign-icon').value = '📣';
+}
+document.getElementById('modal-add-campaign').addEventListener('click', function(e) {
+  if (e.target === this) closeModal('modal-add-campaign');
+});
+
+// ===== LOGS =====
+function addLog(type, message) {
+  const ts = new Date().toLocaleString('en-IN');
+  state.logs.unshift({ type, message, ts });
+  if (state.logs.length > 200) state.logs = state.logs.slice(0, 200);
+  saveLocalState();
+  renderLogs();
+}
+
+function renderLogs() {
+  const cont = document.getElementById('campaign-logs');
+  if (!state.logs.length) { cont.innerHTML = '<div style="font-size:12px;color:var(--text-hint);text-align:center;padding:20px;">No activity yet.</div>'; return; }
+  const typeClass = { GENERATE: 'log-gen', SAVE: 'log-save', RATE: 'log-rate' };
+  cont.innerHTML = state.logs.slice(0, 50).map(l =>
+    `<div class="log-entry"><span class="log-ts">${l.ts}</span><span class="log-type ${typeClass[l.type]||''}">${l.type}</span><span>${escHtml(l.message)}</span></div>`
+  ).join('');
+}
+
+function clearLogs() {
+  if (!confirm('Clear all logs?')) return;
+  state.logs = [];
+  saveLocalState();
+  renderLogs();
+}
+
+// ===== ANALYTICS =====
+function refreshAnalytics() {
+  const total = state.queue.length;
+  const good = state.queue.filter(i => i.rating === 'good').length;
+  const bad = state.queue.filter(i => i.rating === 'bad').length;
+  const pending = state.queue.filter(i => i.rating === 'pending').length;
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-good').textContent = good;
+  document.getElementById('stat-bad').textContent = bad;
+  document.getElementById('stat-pending').textContent = pending;
+  document.getElementById('stat-good-pct').textContent = total ? Math.round(good/total*100) + '% pass rate' : '—';
+  document.getElementById('stat-bad-pct').textContent = total ? Math.round(bad/total*100) + '% fail rate' : '—';
+  renderCampaignPerf();
+  renderChannelPerf();
+  renderRecentTraining();
+}
+
+function renderCampaignPerf() {
+  const cont = document.getElementById('campaign-perf');
+  const map = {};
+  state.queue.forEach(i => {
+    if (!map[i.campaign]) map[i.campaign] = { good: 0, total: 0 };
+    map[i.campaign].total++;
+    if (i.rating === 'good') map[i.campaign].good++;
+  });
+  const sorted = Object.entries(map).sort((a, b) => b[1].total - a[1].total);
+  if (!sorted.length) { cont.innerHTML = '<div style="padding:20px;font-size:12px;color:var(--text-hint);text-align:center;">No data yet</div>'; return; }
+  cont.innerHTML = sorted.map(([name, d]) => {
+    const pct = d.total ? Math.round(d.good/d.total*100) : 0;
+    return `<div class="perf-bar-row"><div class="perf-bar-label" title="${escHtml(name)}">${escHtml(name)}</div><div class="perf-bar-track"><div class="perf-bar-fill" style="width:${pct}%;background:${pct>=60?'var(--good)':pct>=30?'var(--warning)':'var(--bad)'}"></div></div><div class="perf-bar-count">${d.good}/${d.total}</div></div>`;
+  }).join('');
+}
+
+function renderChannelPerf() {
+  const cont = document.getElementById('channel-perf');
+  const map = {};
+  state.queue.forEach(i => {
+    if (!map[i.channel]) map[i.channel] = { good: 0, total: 0 };
+    map[i.channel].total++;
+    if (i.rating === 'good') map[i.channel].good++;
+  });
+  const sorted = Object.entries(map).sort((a, b) => b[1].total - a[1].total);
+  if (!sorted.length) { cont.innerHTML = '<div style="padding:20px;font-size:12px;color:var(--text-hint);text-align:center;">No data yet</div>'; return; }
+  const colors = { whatsapp: '#25D366', sms: 'var(--warning)', 'push notification': 'var(--brand)', email: 'var(--blue)' };
+  cont.innerHTML = sorted.map(([ch, d]) => {
+    const pct = d.total ? Math.round(d.good/d.total*100) : 0;
+    const color = colors[ch.toLowerCase()] || 'var(--blue)';
+    return `<div class="perf-bar-row"><div class="perf-bar-label">${escHtml(ch)}</div><div class="perf-bar-track"><div class="perf-bar-fill" style="width:${pct}%;background:${color}"></div></div><div class="perf-bar-count">${d.good}/${d.total}</div></div>`;
+  }).join('');
+}
+
+function renderRecentTraining() {
+  const cont = document.getElementById('recent-training');
+  const items = state.queue.slice(0, 8);
+  if (!items.length) { cont.innerHTML = '<div style="padding:20px;font-size:12px;color:var(--text-hint);text-align:center;">No data yet</div>'; return; }
+  cont.innerHTML = `<div class="review-table-wrap"><table><thead><tr><th>Channel</th><th>Campaign</th><th>Copy</th><th>Rating</th><th>Feedback</th></tr></thead><tbody>${items.map(i =>
+    `<tr><td><span class="badge badge-channel">${escHtml(i.channel)}</span></td><td style="font-size:11px;color:var(--text-muted);">${escHtml(i.campaign)}</td><td style="max-width:220px;font-family:'DM Mono',monospace;font-size:11px;">${escHtml(i.copy.slice(0,80))}${i.copy.length>80?'…':''}</td><td><span class="badge ${i.rating==='good'?'badge-good':i.rating==='bad'?'badge-bad':'badge-pending'}">${i.rating}</span></td><td style="font-size:11px;color:var(--text-muted);font-style:italic;">${escHtml(i.reason||'—')}</td></tr>`
+  ).join('')}</tbody></table></div>`;
+}
+
+async function generateInsights() {
+  if (!state.apiKey) { alert('Add API key first.'); return; }
+  if (state.queue.length < 3) { alert('Rate at least 3 items to generate insights.'); return; }
+  const cont = document.getElementById('insights-area');
+  cont.innerHTML = '<div class="output-block loading">Generating insights from your feedback data…</div>';
+  const summary = {
+    total: state.queue.length,
+    good: state.queue.filter(i => i.rating === 'good').length,
+    bad: state.queue.filter(i => i.rating === 'bad').length,
+    goodExamples: state.queue.filter(i => i.rating === 'good').slice(0, 5).map(i => ({ copy: i.copy, reason: i.reason, campaign: i.campaign })),
+    badExamples: state.queue.filter(i => i.rating === 'bad').slice(0, 5).map(i => ({ copy: i.copy, reason: i.reason, campaign: i.campaign }))
+  };
+  try {
+    const text = await geminiGenerate(`You are a marketing analyst for Spinny, India's top used car marketplace. Analyze this copy performance data and give 4 sharp, actionable insights for improving future copy quality:\n${JSON.stringify(summary, null, 2)}\n\nFormat: numbered list, each insight 1-2 sentences. Be specific and data-driven.`);
+    const lines = text.split('\n').filter(l => l.trim());
+    cont.innerHTML = lines.map(l => `<div class="insight-item"><div class="insight-icon" style="background:var(--blue-bg);">💡</div><div class="insight-text">${escHtml(l)}</div></div>`).join('');
+  } catch(e) { cont.innerHTML = `<div style="color:var(--bad);font-size:13px;">Error: ${e.message}</div>`; }
+}
+
+// ===== INIT =====
+renderCampaigns();
+document.getElementById('no-campaign-msg').style.display = 'block';
+document.getElementById('generate-content').style.display = 'none';
+updateBadge();
+renderLogs();
+loadAllData(); // Auto-sync on load
+</script>
+</body>
+</html>
